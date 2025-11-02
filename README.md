@@ -19,3 +19,22 @@ A complete mini ecommerce application built with React frontend, Node.js backend
 - React Router
 - Axios for API calls
 - CSS3 with responsive design
+
+### Backend
+- Node.js
+- Express.js
+- PostgreSQL
+- JWT for authentication
+- bcryptjs for password hashing
+
+## Installation
+
+### Prerequisites
+- Node.js (v14 or higher)
+- PostgreSQL (v12 or higher)
+
+### Backend Setup
+
+1. Navigate to backend directory:
+```bash
+cd backend

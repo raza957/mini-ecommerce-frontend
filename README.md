@@ -33,6 +33,6 @@ A complete mini ecommerce application built with React frontend, Node.js backend
 - Node.js (v14 or higher)
 - PostgreSQL (v12 or higher)
 
-### Backend Setup
+
 
 

@@ -1,28 +1,25 @@
 import axios from 'axios';
 
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://hopeful-clarity-production-3316.up.railway.app/api'
+  : 'http://localhost:5000/api';
 
-const getApiBaseUrl = () => {
- 
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.REACT_APP_PROD_API_URL || 'https://hopeful-clarity-production-3316.up.railway.app/api';
-  }
-  return process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
-
-console.log('API Base URL:', API_BASE_URL); 
+console.log('🚀 API Base URL:', API_BASE_URL);
 
 export const API = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  timeout: 10000, 
+  timeout: 15000,
 });
 
-//  Request interceptor for logging
+// Auto token attachment
 API.interceptors.request.use(
   (config) => {
-    console.log('Making API request to:', config.url);
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    console.log(`📡 Making API call to: ${config.url}`);
     return config;
   },
   (error) => {
@@ -30,18 +27,14 @@ API.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
+// Response interceptor for debugging
 API.interceptors.response.use(
   (response) => {
+    console.log('✅ API Response:', response.status, response.config.url);
     return response;
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      delete API.defaults.headers.common['Authorization'];
-      window.location.href = '/login';
-    }
+    console.error('❌ API Error:', error.response?.status, error.config?.url);
     return Promise.reject(error);
   }
 );

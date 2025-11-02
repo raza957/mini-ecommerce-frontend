@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-
+import API from '../../api/config'; // centralized axios instance
+import './Auth.css';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -12,8 +13,8 @@ const Register = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { register } = useAuth();
+
+  const { setUser } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -28,6 +29,7 @@ const Register = () => {
     setLoading(true);
     setError('');
 
+    // ✅ Basic validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       setLoading(false);
@@ -41,11 +43,24 @@ const Register = () => {
     }
 
     try {
-      await register(formData.name, formData.email, formData.password);
+      // ✅ Register user via centralized API
+      const response = await API.post('/auth/register', {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+
+      // ✅ Save token + user in localStorage / AuthContext
+      localStorage.setItem('token', response.data.token);
+      setUser(response.data.user);
+
+      // ✅ Redirect to home page
       navigate('/');
-    } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+    } catch (err) {
+      console.error('Registration Error:', err);
+      setError(err.response?.data?.message || 'Registration failed. Please try again.');
     }
+
     setLoading(false);
   };
 
@@ -126,7 +141,8 @@ const Register = () => {
 
           <div className="auth-footer">
             <p>
-              Already have an account? <Link to="/login" className="auth-link">Sign in</Link>
+              Already have an account?{' '}
+              <Link to="/login" className="auth-link">Sign in</Link>
             </p>
           </div>
         </div>

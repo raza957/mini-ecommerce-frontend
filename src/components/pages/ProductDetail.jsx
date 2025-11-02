@@ -23,7 +23,7 @@ const ProductDetail = () => {
     try {
       setLoading(true);
       console.log('🔄 Fetching product with ID:', id);
-      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/products/${id}`);
       console.log('✅ Product data received:', response.data);
       setProduct(response.data);
       setError('');
@@ -49,8 +49,8 @@ const ProductDetail = () => {
 
     try {
       console.log('🛒 Adding to cart:', { productId: product.id, quantity });
-      
-      const response = await axios.post('http://localhost:5000/api/cart/add', {
+
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/cart/add`, {
         productId: product.id,
         quantity: quantity
       }, {
@@ -93,7 +93,7 @@ const ProductDetail = () => {
     }
     
     // ✅ CORRECT: Direct uploads folder se image serve karo
-    const imageUrl = `http://localhost:5000/uploads/${imageName}`;
+    const imageUrl = `${process.env.REACT_APP_API_URL}/uploads/${imageName}`;
     console.log('✅ Image URL:', imageUrl);
     return imageUrl;
   };

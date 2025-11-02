@@ -16,7 +16,7 @@ const Home = () => {
 
   const fetchFeaturedProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products?featured=true&limit=6');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/products?featured=true&limit=6`);
       setFeaturedProducts(response.data.products);
     } catch (error) {
       console.error('Error fetching featured products:', error);
@@ -25,7 +25,7 @@ const Home = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/categories`);
       setCategories(response.data);
       setLoading(false);
     } catch (error) {

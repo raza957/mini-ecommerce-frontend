@@ -39,7 +39,7 @@ const Profile = () => {
 
   const fetchUserOrders = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/orders', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/orders`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }

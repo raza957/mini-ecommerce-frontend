@@ -36,7 +36,7 @@ const Products = () => {
       if (filters.search) params.append('search', filters.search);
       if (filters.featured) params.append('featured', filters.featured);
       
-      const response = await axios.get(`http://localhost:5000/api/products?${params.toString()}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/products?${params.toString()}`);
       
       // Apply client-side sorting and filtering
       let filteredProducts = response.data.products;
@@ -68,7 +68,7 @@ const Products = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/categories`);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);

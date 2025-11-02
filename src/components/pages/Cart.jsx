@@ -22,7 +22,7 @@ const Cart = () => {
 
   const fetchCartItems = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/cart', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/cart`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -42,7 +42,7 @@ const Cart = () => {
     
     setUpdating(true);
     try {
-      const response = await axios.put(`http://localhost:5000/api/cart/update/${itemId}`, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL}/cart/update/${itemId}`, {
         quantity: newQuantity
       }, {
         headers: {
@@ -69,7 +69,7 @@ const Cart = () => {
     if (!window.confirm('Are you sure you want to remove this item?')) return;
 
     try {
-      await axios.delete(`http://localhost:5000/api/cart/remove/${itemId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/cart/remove/${itemId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -89,7 +89,7 @@ const Cart = () => {
     if (!window.confirm('Are you sure you want to clear your cart?')) return;
 
     try {
-      await axios.delete('http://localhost:5000/api/cart/clear', {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/cart/clear`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`
         }
@@ -110,7 +110,7 @@ const Cart = () => {
     }
     
     // Direct uploads folder se image serve karo
-    return `http://localhost:5000/uploads/${imageName}`;
+    return `${process.env.REACT_APP_API_URL}/uploads/${imageName}`;
   };
 
   // Calculate totals

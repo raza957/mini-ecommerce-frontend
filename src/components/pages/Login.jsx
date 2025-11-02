@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import API from '../../api/config'; // centralized axios instance
 
 
 const Login = () => {
@@ -11,11 +10,10 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const { setUser } = useAuth();
+  
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  // handle form input change
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -23,30 +21,17 @@ const Login = () => {
     });
   };
 
-  // handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // ✅ Backend call through central API instance
-      const response = await API.post('/auth/login', {
-        email: formData.email,
-        password: formData.password,
-      });
-
-      // ✅ Save token + user info
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
-
-      // ✅ Redirect to home
+      await login(formData.email, formData.password);
       navigate('/');
     } catch (error) {
-      console.error('Login Error:', error);
       setError(error.response?.data?.message || 'Login failed. Please try again.');
     }
-
     setLoading(false);
   };
 
@@ -99,8 +84,7 @@ const Login = () => {
 
           <div className="auth-footer">
             <p>
-              Don't have an account?{' '}
-              <Link to="/register" className="auth-link">Sign up</Link>
+              Don't have an account? <Link to="/register" className="auth-link">Sign up</Link>
             </p>
           </div>
         </div>

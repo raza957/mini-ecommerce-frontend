@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import API from '../../api/config'; // ✅ centralized API instance
+import axios from 'axios';
+import API from '../../api/config';
 import ProductCard from '../layout/ProductCard';
 import './Home.css';
 
@@ -14,23 +15,22 @@ const Home = () => {
     fetchCategories();
   }, []);
 
-  // ✅ Use API instead of axios + hardcoded URL
   const fetchFeaturedProducts = async () => {
     try {
-      const response = await API.get(`/products?featured=true&limit=6`);
-      setFeaturedProducts(response.data.products || []);
+      const response = await axios.get(`https://hopeful-clarity-production-3316.up.railway.app/products?featured=true&limit=6`);
+      setFeaturedProducts(response.data.products);
     } catch (error) {
-      console.error('❌ Error fetching featured products:', error);
+      console.error('Error fetching featured products:', error);
     }
   };
 
   const fetchCategories = async () => {
     try {
-      const response = await API.get(`/categories`);
-      setCategories(response.data || []);
+      const response = await axios.get(`https://hopeful-clarity-production-3316.up.railway.app/categories`);
+      setCategories(response.data);
       setLoading(false);
     } catch (error) {
-      console.error('❌ Error fetching categories:', error);
+      console.error('Error fetching categories:', error);
       setLoading(false);
     }
   };
@@ -55,37 +55,37 @@ const Home = () => {
       </section>
 
       {/* Categories Section */}
-      <section className="categories-section">
-        <div className="container">
-          <h2>Shop by Category</h2>
-          <div className="categories-grid">
-            {categories.map((category) => (
-              <Link 
-                key={category.id} 
-                to={`/products?category=${category.id}`}
-                className="category-card"
-              >
-                <div className="category-image">
-                  <div className="category-icon">
-                    {category.id === 1 ? '📱' : 
-                     category.id === 2 ? '👕' : 
-                     category.id === 3 ? '🏠' : '📚'}
-                  </div>
-                </div>
-                <h3>{category.name}</h3>
-                <p>{category.description}</p>
-              </Link>
-            ))}
+<section className="categories-section">
+  <div className="container">
+    <h2>Shop by Category</h2>
+    <div className="categories-grid">
+      {categories.map(category => (
+        <Link 
+          key={category.id} 
+          to={`/products?category=${category.id}`}
+          className="category-card"
+        >
+          <div className="category-image">
+            <div className="category-icon">
+              {category.id === 1 ? '📱' : 
+               category.id === 2 ? '👕' : 
+               category.id === 3 ? '🏠' : '📚'}
+            </div>
           </div>
-        </div>
-      </section>
+          <h3>{category.name}</h3>
+          <p>{category.description}</p>
+        </Link>
+      ))}
+    </div>
+  </div>
+</section>
 
-      {/* Featured Products Section */}
+      {/* Featured Products */}
       <section className="featured-products">
         <div className="container">
           <h2>Featured Products</h2>
           <div className="products-grid">
-            {featuredProducts.map((product) => (
+            {featuredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>

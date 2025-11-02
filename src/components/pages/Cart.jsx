@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
 import API from '../../api/config';
 import './Cart.css';
 
@@ -22,11 +23,15 @@ const Cart = () => {
 
   const fetchCartItems = async () => {
     try {
-      const response = await API.get('/cart');
-      console.log('🛒 Cart items fetched:', response.data);
+      const response = await axios.get(`https://hopeful-clarity-production-3316.up.railway.app/cart`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      console.log('Cart items fetched:', response.data);
       setCartItems(response.data);
     } catch (error) {
-      console.error('❌ Error fetching cart items:', error);
+      console.error('Error fetching cart items:', error);
       alert('Failed to load cart items. Please try again.');
     } finally {
       setLoading(false);
@@ -38,31 +43,45 @@ const Cart = () => {
     
     setUpdating(true);
     try {
-      const response = await API.put(`/cart/update/${itemId}`, { quantity: newQuantity });
-      console.log('✅ Quantity updated:', response.data);
+      const response = await axios.put(`https://hopeful-clarity-production-3316.up.railway.app/cart/update/${itemId}`, {
+        quantity: newQuantity
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
+      console.log('Quantity updated:', response.data);
+      
+      // Update local state
       setCartItems(prevItems => 
         prevItems.map(item => 
           item.id === itemId ? { ...item, quantity: newQuantity } : item
         )
       );
     } catch (error) {
-      console.error('❌ Error updating quantity:', error);
+      console.error('Error updating quantity:', error);
       alert('Failed to update quantity. Please try again.');
-    } finally {
-      setUpdating(false);
     }
+    setUpdating(false);
   };
 
   const removeItem = async (itemId) => {
     if (!window.confirm('Are you sure you want to remove this item?')) return;
 
     try {
-      await API.delete(`/cart/remove/${itemId}`);
-      console.log('🗑 Item removed from cart');
+      await axios.delete(`https://hopeful-clarity-production-3316.up.railway.app/cart/remove/${itemId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Item removed from cart');
+      
+      // Remove from local state
       setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
     } catch (error) {
-      console.error('❌ Error removing item:', error);
+      console.error('Error removing item:', error);
       alert('Failed to remove item. Please try again.');
     }
   };
@@ -71,27 +90,32 @@ const Cart = () => {
     if (!window.confirm('Are you sure you want to clear your cart?')) return;
 
     try {
-      await API.delete('/cart/clear');
-      console.log('🧹 Cart cleared');
+      await axios.delete(`https://hopeful-clarity-production-3316.up.railway.app/cart/clear`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Cart cleared');
       setCartItems([]);
     } catch (error) {
-      console.error('❌ Error clearing cart:', error);
+      console.error('Error clearing cart:', error);
       alert('Failed to clear cart. Please try again.');
     }
   };
-
-  const getImageUrl = (imageName) => {
+const getImageUrl = (imageName) => {
+    const BASE_URL = 'https://hopeful-clarity-production-3316.up.railway.app';
     if (!imageName) {
       return 'https://via.placeholder.com/300x200/cccccc/969696?text=No+Image';
     }
-    const baseURL = API.defaults.baseURL.replace('/api','');
-    return `${baseURL}/uploads/${imageName}`;
+    return `${BASE_URL}/uploads/${imageName}`;
   };
+
 
   // Calculate totals
   const subtotal = cartItems.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0);
   const shipping = subtotal > 50 ? 0 : 9.99;
-  const tax = subtotal * 0.08;
+  const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
 
   const handleCheckout = () => {
@@ -184,7 +208,7 @@ const Cart = () => {
                         console.log('Image failed to load:', item.image);
                         e.target.src = 'https://via.placeholder.com/100x100/cccccc/969696?text=No+Image';
                       }}
-                      onLoad={() => console.log('✅ Image loaded successfully:', item.image)}
+                      onLoad={() => console.log('Image loaded successfully:', item.image)}
                     />
                   </div>
                   
@@ -275,6 +299,7 @@ const Cart = () => {
                   Proceed to Checkout
                 </button>
                
+                
                 <Link to="/products" className="btn btn-secondary">
                   Continue Shopping
                 </Link>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import API from '../../api/config'; // ✅ centralized axios instance
+import axios from 'axios';
 import ProductCard from '../layout/ProductCard';
 import './Products.css';
 
@@ -18,81 +18,84 @@ const Products = () => {
     priceRange: searchParams.get('priceRange') || 'all'
   });
 
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 12;
 
-  // ✅ Fetch products and categories when filters change
   useEffect(() => {
     fetchProducts();
     fetchCategories();
   }, [filters]);
 
-  // ✅ Fetch all products
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
+      
       if (filters.category) params.append('category', filters.category);
       if (filters.search) params.append('search', filters.search);
       if (filters.featured) params.append('featured', filters.featured);
-
-      const response = await API.get(`/products?${params.toString()}`);
-      let filtered = response.data.products || [];
-
-      // ✅ Price Range Filter
+      
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/products?${params.toString()}`);
+      
+      // Apply client-side sorting and filtering
+      let filteredProducts = response.data.products;
+      
+      // Apply price range filter
       if (filters.priceRange !== 'all') {
-        filtered = filtered.filter(p => {
+        filteredProducts = filteredProducts.filter(product => {
           switch (filters.priceRange) {
-            case 'under25': return p.price < 25;
-            case '25to50': return p.price >= 25 && p.price <= 50;
-            case '50to100': return p.price > 50 && p.price <= 100;
-            case 'over100': return p.price > 100;
+            case 'under25': return product.price < 25;
+            case '25to50': return product.price >= 25 && product.price <= 50;
+            case '50to100': return product.price > 50 && product.price <= 100;
+            case 'over100': return product.price > 100;
             default: return true;
           }
         });
       }
-
-      // ✅ Sorting
-      filtered = sortProducts(filtered, filters.sort);
-
-      setProducts(filtered);
-      setCurrentPage(1);
+      
+      // Apply sorting
+      filteredProducts = sortProducts(filteredProducts, filters.sort);
+      
+      setProducts(filteredProducts);
+      setCurrentPage(1); // Reset to first page when filters change
+      setLoading(false);
     } catch (error) {
-      console.error('❌ Error fetching products:', error);
-    } finally {
+      console.error('Error fetching products:', error);
       setLoading(false);
     }
   };
 
-  // ✅ Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await API.get('/categories');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/categories`);
       setCategories(response.data);
     } catch (error) {
-      console.error('❌ Error fetching categories:', error);
+      console.error('Error fetching categories:', error);
     }
   };
 
-  // ✅ Sorting Logic
-  const sortProducts = (list, sortBy) => {
-    const sorted = [...list];
+  const sortProducts = (products, sortBy) => {
+    const sorted = [...products];
     switch (sortBy) {
-      case 'price-low': return sorted.sort((a, b) => a.price - b.price);
-      case 'price-high': return sorted.sort((a, b) => b.price - a.price);
-      case 'name': return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case 'newest': return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      default: return sorted;
+      case 'price-low':
+        return sorted.sort((a, b) => a.price - b.price);
+      case 'price-high':
+        return sorted.sort((a, b) => b.price - a.price);
+      case 'name':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'newest':
+        return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      default:
+        return sorted;
     }
   };
 
-  // ✅ Filter Change Handler
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-
+    
+    // Update URL parameters
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([k, v]) => {
       if (v && v !== 'all') params.set(k, v);
@@ -100,39 +103,39 @@ const Products = () => {
     setSearchParams(params);
   };
 
-  // ✅ Clear all filters
   const clearFilters = () => {
-    setFilters({
-      category: '',
-      search: '',
-      featured: '',
-      sort: 'newest',
-      priceRange: 'all'
+    setFilters({ 
+      category: '', 
+      search: '', 
+      featured: '', 
+      sort: 'newest', 
+      priceRange: 'all' 
     });
     setSearchParams({});
   };
 
-  // ✅ Pagination
-  const indexOfLast = currentPage * productsPerPage;
-  const indexOfFirst = indexOfLast - productsPerPage;
-  const currentProducts = products.slice(indexOfFirst, indexOfLast);
+  // Pagination
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
   const totalPages = Math.ceil(products.length / productsPerPage);
 
-  const paginate = (page) => setCurrentPage(page);
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const getActiveCategoryName = () => {
     if (!filters.category) return null;
-    const cat = categories.find(c => c.id == filters.category);
-    return cat ? cat.name : null;
+    const category = categories.find(cat => cat.id == filters.category);
+    return category ? category.name : null;
   };
 
-  // ✅ Loading UI
   if (loading) {
     return (
       <div className="products-page">
-        <div className="container loading-section">
-          <div className="loading-spinner"></div>
-          <p>Loading products...</p>
+        <div className="container">
+          <div className="loading-products">
+            <div className="loading-spinner"></div>
+            <p>Loading products...</p>
+          </div>
         </div>
       </div>
     );
@@ -141,7 +144,7 @@ const Products = () => {
   return (
     <div className="products-page">
       <div className="container">
-        {/* Header */}
+        {/* Header with Breadcrumb */}
         <div className="page-header">
           <nav className="breadcrumb">
             <Link to="/">Home</Link>
@@ -154,113 +157,224 @@ const Products = () => {
               </>
             )}
           </nav>
-
+          
           <div className="header-content">
-            <h1>Our Products</h1>
-            <p>Explore our amazing collection of {getActiveCategoryName() || 'products'}</p>
-            <span className="products-count">{products.length} items found</span>
+            <div className="header-text">
+              <h1>Our Products</h1>
+              <p>Discover our amazing collection of {getActiveCategoryName() ? getActiveCategoryName().toLowerCase() : 'products'}</p>
+            </div>
+            <div className="header-stats">
+              <span className="products-count">{products.length} products found</span>
+            </div>
           </div>
         </div>
 
+        {/* Main Content */}
         <div className="products-content">
           {/* Sidebar Filters */}
-          <aside className="filters-sidebar">
+          <div className="filters-sidebar">
             <div className="filters-header">
               <h3>Filters</h3>
-              <button onClick={clearFilters} className="clear-filters-btn">Clear</button>
-            </div>
-
-            {/* Categories */}
-            <div className="filter-group">
-              <h4>Categories</h4>
-              <button
-                className={!filters.category ? 'active' : ''}
-                onClick={() => handleFilterChange('category', '')}
-              >
-                All
+              <button onClick={clearFilters} className="clear-filters-btn">
+                Clear All
               </button>
-              {categories.map(cat => (
+            </div>
+
+            {/* Categories Filter */}
+            <div className="filter-group">
+              <h4 className="filter-title">Categories</h4>
+              <div className="category-filters">
                 <button
-                  key={cat.id}
-                  className={filters.category == cat.id ? 'active' : ''}
-                  onClick={() => handleFilterChange('category', cat.id)}
+                  className={`category-filter ${!filters.category ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('category', '')}
                 >
-                  {cat.name}
+                  All Categories
                 </button>
-              ))}
+                {categories.map(category => (
+                  <button
+                    key={category.id}
+                    className={`category-filter ${filters.category == category.id ? 'active' : ''}`}
+                    onClick={() => handleFilterChange('category', category.id)}
+                  >
+                    {category.name}
+                    <span className="category-count">
+                      {/* You can add product counts per category here */}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Price Range */}
+            {/* Price Range Filter */}
             <div className="filter-group">
-              <h4>Price Range</h4>
-              {[
-                { value: 'all', label: 'All Prices' },
-                { value: 'under25', label: 'Under $25' },
-                { value: '25to50', label: '$25 - $50' },
-                { value: '50to100', label: '$50 - $100' },
-                { value: 'over100', label: 'Over $100' }
-              ].map(range => (
-                <label key={range.value}>
+              <h4 className="filter-title">Price Range</h4>
+              <div className="price-filters">
+                {[
+                  { value: 'all', label: 'All Prices' },
+                  { value: 'under25', label: 'Under $25' },
+                  { value: '25to50', label: '$25 - $50' },
+                  { value: '50to100', label: '$50 - $100' },
+                  { value: 'over100', label: 'Over $100' }
+                ].map(range => (
+                  <label key={range.value} className="price-filter">
+                    <input
+                      type="radio"
+                      name="priceRange"
+                      value={range.value}
+                      checked={filters.priceRange === range.value}
+                      onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+                    />
+                    <span className="checkmark"></span>
+                    {range.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Featured Filter */}
+            <div className="filter-group">
+              <h4 className="filter-title">Product Type</h4>
+              <div className="featured-filter">
+                <label className="checkbox-label">
                   <input
-                    type="radio"
-                    name="priceRange"
-                    value={range.value}
-                    checked={filters.priceRange === range.value}
-                    onChange={(e) => handleFilterChange('priceRange', e.target.value)}
+                    type="checkbox"
+                    checked={filters.featured === 'true'}
+                    onChange={(e) => handleFilterChange('featured', e.target.checked ? 'true' : '')}
                   />
-                  {range.label}
+                  <span className="checkmark"></span>
+                  Featured Products Only
                 </label>
-              ))}
+              </div>
             </div>
 
-            {/* Featured */}
+            {/* Quick Links */}
             <div className="filter-group">
-              <h4>Featured</h4>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={filters.featured === 'true'}
-                  onChange={(e) => handleFilterChange('featured', e.target.checked ? 'true' : '')}
-                /> Featured only
-              </label>
+              <h4 className="filter-title">Quick Links</h4>
+              <div className="quick-links">
+                <Link to="/products?featured=true" className="quick-link">
+                  🔥 Featured Items
+                </Link>
+                <Link to="/products?category=1" className="quick-link">
+                  📱 Electronics
+                </Link>
+                <Link to="/products?category=2" className="quick-link">
+                  👕 Fashion
+                </Link>
+                <Link to="/products?category=3" className="quick-link">
+                  🏠 Home & Kitchen
+                </Link>
+                <Link to="/products?category=4" className="quick-link">
+                  📚 Books
+                </Link>
+              </div>
             </div>
-          </aside>
+          </div>
 
-          {/* Products Display */}
-          <main className="products-main">
+          {/* Products Section */}
+          <div className="products-main">
+            {/* Products Toolbar */}
             <div className="products-toolbar">
-              <div className="search-box">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                />
+              <div className="toolbar-left">
+                <div className="view-toggle">
+                  <button
+                    className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                    onClick={() => setViewMode('grid')}
+                    title="Grid View"
+                  >
+                    ▦
+                  </button>
+                  <button
+                    className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                    onClick={() => setViewMode('list')}
+                    title="List View"
+                  >
+                    ☰
+                  </button>
+                </div>
+                
+                <div className="search-box">
+                  <input
+                    type="text"
+                    placeholder="Search products..."
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    className="search-input"
+                  />
+                  <span className="search-icon">🔍</span>
+                </div>
               </div>
-              <div className="sort-filter">
-                <label>Sort by:</label>
-                <select
-                  value={filters.sort}
-                  onChange={(e) => handleFilterChange('sort', e.target.value)}
-                >
-                  <option value="newest">Newest</option>
-                  <option value="price-low">Price: Low → High</option>
-                  <option value="price-high">Price: High → Low</option>
-                  <option value="name">Name A-Z</option>
-                </select>
+
+              <div className="toolbar-right">
+                <div className="sort-filter">
+                  <label>Sort by:</label>
+                  <select
+                    value={filters.sort}
+                    onChange={(e) => handleFilterChange('sort', e.target.value)}
+                    className="sort-select"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="name">Name A-Z</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="price-high">Price: High to Low</option>
+                  </select>
+                </div>
               </div>
             </div>
 
+            {/* Active Filters */}
+            {(filters.category || filters.search || filters.featured || filters.priceRange !== 'all') && (
+              <div className="active-filters">
+                <span className="active-filters-label">Active filters:</span>
+                {filters.category && (
+                  <span className="active-filter">
+                    Category: {getActiveCategoryName()}
+                    <button onClick={() => handleFilterChange('category', '')}>×</button>
+                  </span>
+                )}
+                {filters.search && (
+                  <span className="active-filter">
+                    Search: "{filters.search}"
+                    <button onClick={() => handleFilterChange('search', '')}>×</button>
+                  </span>
+                )}
+                {filters.featured && (
+                  <span className="active-filter">
+                    Featured Only
+                    <button onClick={() => handleFilterChange('featured', '')}>×</button>
+                  </span>
+                )}
+                {filters.priceRange !== 'all' && (
+                  <span className="active-filter">
+                    Price: {
+                      filters.priceRange === 'under25' ? 'Under $25' :
+                      filters.priceRange === '25to50' ? '$25 - $50' :
+                      filters.priceRange === '50to100' ? '$50 - $100' : 'Over $100'
+                    }
+                    <button onClick={() => handleFilterChange('priceRange', 'all')}>×</button>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Products Grid/List */}
             {products.length === 0 ? (
               <div className="no-products">
-                <p>No products found. Try adjusting your filters.</p>
-                <button onClick={clearFilters} className="btn btn-primary">Reset Filters</button>
+                <div className="no-products-icon">😞</div>
+                <h3>No products found</h3>
+                <p>Try adjusting your search filters or browse different categories</p>
+                <button onClick={clearFilters} className="btn btn-primary">
+                  Clear All Filters
+                </button>
               </div>
             ) : (
               <>
                 <div className={`products-display ${viewMode}`}>
-                  {currentProducts.map(p => (
-                    <ProductCard key={p.id} product={p} viewMode={viewMode} />
+                  {currentProducts.map(product => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      viewMode={viewMode}
+                    />
                   ))}
                 </div>
 
@@ -270,21 +384,27 @@ const Products = () => {
                     <button
                       onClick={() => paginate(currentPage - 1)}
                       disabled={currentPage === 1}
+                      className="pagination-btn"
                     >
-                      ← Prev
+                      ← Previous
                     </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-                      <button
-                        key={num}
-                        className={currentPage === num ? 'active' : ''}
-                        onClick={() => paginate(num)}
-                      >
-                        {num}
-                      </button>
-                    ))}
+                    
+                    <div className="pagination-numbers">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                        <button
+                          key={number}
+                          onClick={() => paginate(number)}
+                          className={`pagination-number ${currentPage === number ? 'active' : ''}`}
+                        >
+                          {number}
+                        </button>
+                      ))}
+                    </div>
+                    
                     <button
                       onClick={() => paginate(currentPage + 1)}
                       disabled={currentPage === totalPages}
+                      className="pagination-btn"
                     >
                       Next →
                     </button>
@@ -292,7 +412,7 @@ const Products = () => {
                 )}
               </>
             )}
-          </main>
+          </div>
         </div>
       </div>
     </div>

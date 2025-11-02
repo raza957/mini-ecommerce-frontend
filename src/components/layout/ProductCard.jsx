@@ -1,9 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import './ProductCard.css';
-import API from '../../api/config';
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
@@ -20,7 +17,7 @@ const ProductCard = ({ product }) => {
 
     try {
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/cart/add`,
+        'http://localhost:5000/api/cart/add',
         { productId: product.id, quantity: 1 },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
@@ -34,7 +31,7 @@ const ProductCard = ({ product }) => {
   const getImageUrl = (imageName) => {
   if (!imageName)
     return 'https://via.placeholder.com/300x200/cccccc/969696?text=No+Image';
-  return `${API.defaults.baseURL.replace('/api','')}/uploads/${imageName}`;
+  return `http://localhost:5000/uploads/${imageName}`;
 };
 
 

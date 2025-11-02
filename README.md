@@ -35,6 +35,4 @@ A complete mini ecommerce application built with React frontend, Node.js backend
 
 ### Backend Setup
 
-1. Navigate to backend directory:
-```bash
-cd backend
+

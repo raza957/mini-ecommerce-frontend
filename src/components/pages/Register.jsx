@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import API from '../../api/config'; // centralized axios instance
-import './Auth.css';
+
 
 const Register = () => {
   const [formData, setFormData] = useState({
